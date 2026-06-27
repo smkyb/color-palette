@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { formatHex, displayable } from 'culori';
+import { oklchToSrgb255, rgb255ToHex } from './oklch';
 import './App.css';
 
 type Axis = 'l' | 'c' | 'h';
@@ -73,35 +73,37 @@ function App() {
       const data = imageData.data;
       const validGrid = validGridRef.current;
 
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const xVal = ranges.x.min + (x / 299) * (ranges.x.max - ranges.x.min);
-          const yVal = ranges.y.min + (y / 299) * (ranges.y.max - ranges.y.min);
+      const xRange = ranges.x.max - ranges.x.min;
+      const yRange = ranges.y.max - ranges.y.min;
+      const xMin = ranges.x.min;
+      const yMin = ranges.y.min;
+      const inv299 = 1 / 299;
+
+      for (let py = 0; py < height; py++) {
+        const yVal = yMin + (py * inv299) * yRange;
+        for (let px = 0; px < width; px++) {
+          const xVal = xMin + (px * inv299) * xRange;
           
-          let l = 0, c = 0, h = 0;
+          let l: number, c: number, h: number;
           if (fixedAxis === 'l') { l = fixedValue; c = xVal; h = yVal; }
           else if (fixedAxis === 'c') { c = fixedValue; h = xVal; l = yVal; }
           else { h = fixedValue; c = xVal; l = yVal; }
 
-          let r = 255, g = 255, b = 255, a = 255;
-          const colorObj = { mode: 'oklch' as const, l, c, h };
-          const isValid = displayable(colorObj);
-          validGrid[y * width + x] = isValid ? 1 : 0;
+          const index = (py * width + px) * 4;
+          const rgb = oklchToSrgb255(l!, c!, h!);
 
-          if (isValid) {
-            const hex = formatHex(colorObj);
-            if (hex) {
-               r = parseInt(hex.slice(1, 3), 16);
-               g = parseInt(hex.slice(3, 5), 16);
-               b = parseInt(hex.slice(5, 7), 16);
-            }
+          if (rgb) {
+            data[index] = rgb[0];
+            data[index + 1] = rgb[1];
+            data[index + 2] = rgb[2];
+            validGrid[py * width + px] = 1;
+          } else {
+            data[index] = 255;
+            data[index + 1] = 255;
+            data[index + 2] = 255;
+            validGrid[py * width + px] = 0;
           }
-
-          const index = (y * width + x) * 4;
-          data[index] = r;
-          data[index + 1] = g;
-          data[index + 2] = b;
-          data[index + 3] = a;
+          data[index + 3] = 255;
         }
       }
       
@@ -191,13 +193,13 @@ function App() {
     if (!coords) return null;
     const xVal = ranges.x.min + (coords.x / 299) * (ranges.x.max - ranges.x.min);
     const yVal = ranges.y.min + (coords.y / 299) * (ranges.y.max - ranges.y.min);
-    let l = 0, c = 0, h = 0;
+    let l: number, c: number, h: number;
     if (fixedAxis === 'l') { l = fixedValue; c = xVal; h = yVal; }
     else if (fixedAxis === 'c') { c = fixedValue; h = xVal; l = yVal; }
     else { h = fixedValue; c = xVal; l = yVal; }
-    const colorObj = { mode: 'oklch' as const, l, c, h };
-    if (!displayable(colorObj)) return null;
-    return formatHex(colorObj);
+    const rgb = oklchToSrgb255(l!, c!, h!);
+    if (!rgb) return null;
+    return rgb255ToHex(rgb[0], rgb[1], rgb[2]);
   };
 
   // Unified Pointer Event Handlers
