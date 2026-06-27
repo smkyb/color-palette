@@ -110,20 +110,54 @@
   justify-content: center;
   align-items: center;
   min-height: 0;
+  width: 100%;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-rows: 24px 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+  height: 100%;
+  max-height: 340px;
+  align-items: stretch;
+  justify-items: stretch;
+}
+
+.empty-corner {
+  /* empty */
+}
+
+.top-slider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--text-color);
+}
+
+.left-slider {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  accent-color: var(--text-color);
+  writing-mode: bt-lr; /* For some browsers */
 }
 
 .canvas-wrapper {
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
   display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .color-canvas {
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   cursor: crosshair;
