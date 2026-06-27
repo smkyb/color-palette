@@ -178,22 +178,13 @@ function App() {
     return null;
   };
 
-  const getCanvasCoords = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
+  const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    let clientX, clientY;
-    if ('touches' in e) {
-      if (e.touches.length === 0) return null;
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = (e as React.MouseEvent).clientX;
-      clientY = (e as React.MouseEvent).clientY;
-    }
     const rect = canvas.getBoundingClientRect();
     const scaleX = 300 / rect.width;
     const scaleY = 300 / rect.height;
-    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   };
 
   const getHexFromCoords = (coords: { x: number, y: number } | null) => {
@@ -209,21 +200,16 @@ function App() {
     return formatHex(colorObj);
   };
 
-  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-    const coords = getCanvasCoords(e);
-    if (coords) {
-      const closest = findClosestValidCoords(coords.x, coords.y);
-      setHoveredHex(getHexFromCoords(closest) || null);
-    } else {
-      setHoveredHex(null);
+  // Unified Pointer Event Handlers
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch (err) {
+      // Ignored if browser doesn't support or it fails
     }
-  };
 
-  const handleEnd = () => {
-    setHoveredHex(null);
-  };
-
-  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
     const coords = getCanvasCoords(e);
     if (coords) {
       const closest = findClosestValidCoords(coords.x, coords.y);
@@ -232,6 +218,38 @@ function App() {
         setSelectedHex(getHexFromCoords(closest));
       }
     }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const coords = getCanvasCoords(e);
+    if (!coords) return;
+
+    const closest = findClosestValidCoords(coords.x, coords.y);
+    
+    if (e.buttons === 1) {
+      // Dragging (pointer is down)
+      if (closest) {
+        setSelectedPoint(closest);
+        setSelectedHex(getHexFromCoords(closest));
+      }
+    } else if (e.pointerType === 'mouse') {
+      // Hovering with mouse on desktop
+      setHoveredHex(getHexFromCoords(closest) || null);
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+    setHoveredHex(null);
+  };
+
+  const handlePointerLeave = () => {
+    setHoveredHex(null);
   };
 
   const handleTopSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,12 +337,10 @@ function App() {
               <canvas
                 ref={canvasRef}
                 className="color-canvas"
-                onMouseMove={handleMove}
-                onMouseLeave={handleEnd}
-                onClick={handleClick}
-                onTouchMove={handleMove}
-                onTouchEnd={handleEnd}
-                onTouchStart={handleClick}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerLeave}
               ></canvas>
             </div>
           </div>
