@@ -66,8 +66,8 @@ function App() {
 
       const width = 300;
       const height = 300;
-      canvas.width = width;
-      canvas.height = height;
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
 
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
