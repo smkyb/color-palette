@@ -187,3 +187,19 @@
   background: #ffffff;
   touch-action: none;
 }
+
+@media (max-width: 480px) {
+  .app-container {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  .header {
+    display: none;
+  }
+  .main-content {
+    gap: 0.5rem;
+  }
+  .controls-panel {
+    gap: 0.5rem;
+  }
+}
