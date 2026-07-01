@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { oklchToSrgb255, rgb255ToHex } from './oklch';
+import { oklchToSrgb255, rgb255ToHex, hexToOklch } from './oklch';
 import './App.css';
 
 type Axis = 'l' | 'c' | 'h';
@@ -10,10 +10,59 @@ function App() {
   const [hoveredHex, setHoveredHex] = useState<string | null>(null);
   const [selectedHex, setSelectedHex] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<{ x: number, y: number }>({ x: 150, y: 150 });
+  const [hexInput, setHexInput] = useState<string>('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const validGridRef = useRef<Uint8Array>(new Uint8Array(300 * 300));
   const imageDataRef = useRef<ImageData | null>(null);
+
+  useEffect(() => {
+    if (selectedHex) {
+      setHexInput(selectedHex.replace('#', '').toUpperCase());
+    } else {
+      setHexInput('');
+    }
+  }, [selectedHex]);
+
+  const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // 6桁の16進数文字のみを許可
+    const cleanVal = val.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
+    setHexInput(cleanVal);
+
+    if (cleanVal.length === 6) {
+      const oklch = hexToOklch(cleanVal);
+      if (oklch) {
+        const { l, c, h } = oklch;
+
+        let newFixedValue = fixedValue;
+        let newX = selectedPoint.x;
+        let newY = selectedPoint.y;
+
+        if (fixedAxis === 'l') {
+          newFixedValue = Math.max(0, Math.min(1, l));
+          newX = Math.round(((c - 0) / 0.4) * 299);
+          newY = Math.round(((h - 360) / -360) * 299); // Y-axis ranges: min: 360, max: 0
+        } else if (fixedAxis === 'c') {
+          newFixedValue = Math.max(0, Math.min(0.4, c));
+          newX = Math.round(((h - 0) / 360) * 299); // ranges.x: min: 0, max: 360
+          newY = Math.round(((l - 1) / -1) * 299);   // ranges.y: min: 1, max: 0
+        } else if (fixedAxis === 'h') {
+          newFixedValue = Math.max(0, Math.min(360, h));
+          newX = Math.round(((c - 0) / 0.4) * 299); // ranges.x: min: 0, max: 0.4
+          newY = Math.round(((l - 1) / -1) * 299);   // ranges.y: min: 1, max: 0
+        }
+
+        // Clamp coordinates
+        newX = Math.max(0, Math.min(299, newX));
+        newY = Math.max(0, Math.min(299, newY));
+
+        setFixedValue(newFixedValue);
+        setSelectedPoint({ x: newX, y: newY });
+        setSelectedHex('#' + cleanVal.toLowerCase());
+      }
+    }
+  };
 
   const getRanges = () => {
     switch (fixedAxis) {
@@ -309,11 +358,16 @@ function App() {
 
           <div className="color-preview">
             <div className="preview-swatch" style={swatchStyle}></div>
-            <div 
-              className="preview-hex"
-              onClick={() => selectedHex && navigator.clipboard.writeText(selectedHex)}
-            >
-              {selectedHex ? selectedHex.toUpperCase() : '------'}
+            <div className="hex-input-container">
+              <span className="hex-prefix">#</span>
+              <input
+                type="text"
+                className="hex-input"
+                placeholder="FFFFFF"
+                value={hexInput}
+                onChange={handleHexInputChange}
+                maxLength={6}
+              />
             </div>
           </div>
         </div>

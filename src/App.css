@@ -95,13 +95,36 @@
   border: 1px solid #cbd5e1;
 }
 
-.preview-hex {
+.hex-input-container {
+  display: flex;
+  align-items: center;
   font-size: 1.25rem;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
   width: 100px;
-  text-align: center;
-  cursor: pointer;
+}
+
+.hex-prefix {
+  color: #94a3b8;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.hex-input {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+  width: 100%;
+  padding: 0;
+  outline: none;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
 }
 
 .map-panel {
